@@ -1,0 +1,23 @@
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+
+# Swift Package Manager
+.build/
+
+# macOS
+.DS_Store
+
+# Temporary files
+*.swp
+*~
+
+# Build products
+build/
+DerivedData/
+
+# Other
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
