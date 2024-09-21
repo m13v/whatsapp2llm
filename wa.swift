@@ -1,5 +1,60 @@
 import Cocoa
 import Foundation
+import Security
+
+// Simple OpenAI API Client
+class OpenAIClient {
+    let apiKey: String
+    let baseURL = "https://api.openai.com/v1/chat/completions"
+    
+    init(apiKey: String) {
+        self.apiKey = apiKey
+    }
+    
+    func sendCompletion(prompt: String, model: String = "gpt-4o", maxTokens: Int = 4000, completion: @escaping (Result<String, Error>) -> Void) {
+        let url = URL(string: baseURL)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = [
+            "model": model,
+            "messages": [
+                ["role": "user", "content": prompt]
+            ],
+            "max_tokens": maxTokens
+        ]
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(NSError(domain: "OpenAIClient", code: 0, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                return
+            }
+            
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let choices = json["choices"] as? [[String: Any]],
+                   let firstChoice = choices.first,
+                   let message = firstChoice["message"] as? [String: Any],
+                   let content = message["content"] as? String {
+                    completion(.success(content))
+                } else {
+                    throw NSError(domain: "OpenAIClient", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response format"])
+                }
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+}
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
@@ -10,6 +65,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusLabel: NSTextField!
     var conversationsDropdown: NSPopUpButton!
     var contactsDropdown: NSPopUpButton!
+    var addToAIChatButton: NSButton!
+    var openAI: OpenAIClient?
+    var loadingSpinner: NSProgressIndicator!
+
+    let keychainService = "com.yourcompany.whatsapp-autoresponder"
+    let keychainAccount = "OPENAI_API_KEY"
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         let frame = NSRect(x: 100, y: 100, width: 1200, height: 800) // 4 times larger
@@ -51,8 +112,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusColumn.addSubview(statusHeading)
         statusColumn.addSubview(statusLabel)
 
+        // Load button (adjusted position)
+        let loadButton = NSButton(frame: NSRect(x: 20, y: window.contentView!.frame.height - 160, width: 150, height: 30))
+        loadButton.title = "load chat history"
+        loadButton.bezelStyle = .rounded
+        loadButton.target = self
+        loadButton.action = #selector(loadChatHistory)
+        loadButton.wantsLayer = true
+        loadButton.layer?.backgroundColor = NSColor.systemBlue.cgColor
+        loadButton.layer?.cornerRadius = 5
+
         // Conversations dropdown (adjusted position and width)
-        conversationsDropdown = NSPopUpButton(frame: NSRect(x: 20, y: window.contentView!.frame.height - 160, width: 240, height: 30))
+        conversationsDropdown = NSPopUpButton(frame: NSRect(x: 20, y: window.contentView!.frame.height - 200, width: 240, height: 30))
         conversationsDropdown.addItem(withTitle: "select a conversation")
         conversationsDropdown.wantsLayer = true
         conversationsDropdown.layer?.backgroundColor = NSColor(calibratedWhite: 0.2, alpha: 1.0).cgColor
@@ -65,8 +136,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ]
         conversationsDropdown.attributedTitle = NSAttributedString(string: "select a conversation", attributes: attributes)
 
-        // Contacts dropdown (new)
-        contactsDropdown = NSPopUpButton(frame: NSRect(x: 280, y: window.contentView!.frame.height - 160, width: 240, height: 30))
+        // Add target for conversationsDropdown
+        conversationsDropdown.target = self
+        conversationsDropdown.action = #selector(conversationSelected)
+
+        // Contacts dropdown (adjusted position)
+        contactsDropdown = NSPopUpButton(frame: NSRect(x: 280, y: window.contentView!.frame.height - 200, width: 240, height: 30))
         contactsDropdown.addItem(withTitle: "select a contact")
         contactsDropdown.wantsLayer = true
         contactsDropdown.layer?.backgroundColor = NSColor(calibratedWhite: 0.2, alpha: 1.0).cgColor
@@ -79,18 +154,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ]
         contactsDropdown.attributedTitle = NSAttributedString(string: "select a contact", attributes: contactAttributes)
 
-        // Load button (adjusted position)
-        let loadButton = NSButton(frame: NSRect(x: 20, y: window.contentView!.frame.height - 200, width: 150, height: 30))
-        loadButton.title = "load chat history"
-        loadButton.bezelStyle = .rounded
-        loadButton.target = self
-        loadButton.action = #selector(loadChatHistory)
-        loadButton.wantsLayer = true
-        loadButton.layer?.backgroundColor = NSColor.systemBlue.cgColor
-        loadButton.layer?.cornerRadius = 5
+        // Add target for contactsDropdown
+        contactsDropdown.target = self
+        contactsDropdown.action = #selector(contactSelected)
+
+        // Add to AI chat button
+        addToAIChatButton = NSButton(frame: NSRect(x: 540, y: window.contentView!.frame.height - 200, width: 120, height: 30))
+        addToAIChatButton.title = "add to AI chat"
+        addToAIChatButton.bezelStyle = .rounded
+        addToAIChatButton.target = self
+        addToAIChatButton.action = #selector(addToAIChat)
+        addToAIChatButton.wantsLayer = true
+        addToAIChatButton.layer?.backgroundColor = NSColor.systemGreen.cgColor
+        addToAIChatButton.layer?.cornerRadius = 5
 
         // Progress bar (adjusted position)
-        progressBar = NSProgressIndicator(frame: NSRect(x: 180, y: window.contentView!.frame.height - 195, width: 400, height: 20))
+        progressBar = NSProgressIndicator(frame: NSRect(x: 180, y: window.contentView!.frame.height - 155, width: 400, height: 20))
         progressBar.style = .bar
         progressBar.isIndeterminate = false
         progressBar.minValue = 0
@@ -112,24 +191,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         scrollView.documentView = textView
 
+        // Add loading spinner
+        loadingSpinner = NSProgressIndicator(frame: NSRect(x: 20, y: 20, width: 32, height: 32))
+        loadingSpinner.style = .spinning
+        loadingSpinner.isDisplayedWhenStopped = false
+
         contentView.addSubview(statsColumn)
         contentView.addSubview(statusColumn)
+        contentView.addSubview(loadButton)
         contentView.addSubview(conversationsDropdown)
         contentView.addSubview(contactsDropdown)
-        contentView.addSubview(loadButton)
+        contentView.addSubview(addToAIChatButton)  // Add the new button
         contentView.addSubview(progressBar)
         contentView.addSubview(scrollView)
+        contentView.addSubview(loadingSpinner)
 
         window.contentView = contentView
 
         // Set up autoresizing masks
         statsColumn.autoresizingMask = [.minYMargin] // Stick to left side when resizing
         statusColumn.autoresizingMask = [.minXMargin, .minYMargin]
+        loadButton.autoresizingMask = [.minYMargin] // Stick to left side when resizing
         conversationsDropdown.autoresizingMask = [.minYMargin] // Stick to left side when resizing
         contactsDropdown.autoresizingMask = [.minYMargin]
-        loadButton.autoresizingMask = [.minYMargin] // Stick to left side when resizing
+        addToAIChatButton.autoresizingMask = [.minYMargin]
         progressBar.autoresizingMask = [.width, .minYMargin]
         scrollView.autoresizingMask = [.width, .height]
+        loadingSpinner.autoresizingMask = [.minXMargin, .minYMargin]
 
         window.setContentSize(NSSize(width: 1200, height: 800)) // 4 times larger
         window.minSize = NSSize(width: 800, height: 600) // Adjusted minimum size
@@ -212,6 +300,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                             }
                         }
                     }
+                }
+                
+                // Display message history
+                let messageHistory = lines.drop(while: { !$0.starts(with: "[") })
+                DispatchQueue.main.async {
+                    self.textView.string = messageHistory.joined(separator: "\n")
                 }
             } catch {
                 print("error reading archive file: \(error.localizedDescription)")
@@ -348,20 +442,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
             
-            // Move statusLog definition here, after the loop
-            let statusLog = "status_log:\n  timestamp: \(ISO8601DateFormatter().string(from: Date()))\n  new messages: \(newMessages.count)\n  processed zips: \(processedZipCount)\n  last zip: \(zipFiles.first?.lastPathComponent ?? "N/A")\n"
-
             if !newMessages.isEmpty || processedZipCount > 0 || !archiveExists {
-                var totalMessages = 0
-                var totalConversations = 0
-                var totalContacts = 0
-
-                totalMessages = existingMessages.count + newMessages.count
-                totalConversations = conversations.count
-                totalContacts = contacts.count
+                var totalMessages = existingMessages.count + newMessages.count
+                var totalConversations = conversations.count
+                var totalContacts = contacts.count
 
                 let statsLog = "stats:\n  total messages: \(totalMessages)\n  total conversations: \(totalConversations)\n  total contacts: \(totalContacts)\n"
-                let conversationsLog = "conversations:\n" + conversations.map { "  \($0.key): \($0.value)" }.joined(separator: "\n") + "\n"
+                let statusLog = "status_log:\n  timestamp: \(ISO8601DateFormatter().string(from: Date()))\n  new messages: \(newMessages.count)\n  processed zips: \(processedZipCount)\n  last zip: \(zipFiles.first?.lastPathComponent ?? "N/A")\n"
+                
+                let conversationsLog = conversations.isEmpty ? "" : "conversations:\n" + conversations.map { "  \($0.key): \($0.value)" }.joined(separator: "\n") + "\n"
 
                 // Sort contacts
                 let sortedContacts = contacts.sorted { (contact1, contact2) -> Bool in
@@ -379,8 +468,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
 
-                let contactsLog = "contacts:\n" + sortedContacts.map { "  \($0.key): \($0.value.lastTimestamp): \($0.value.messageCount)" }.joined(separator: "\n") + "\n"
-                let updatedContent = statsLog + statusLog + conversationsLog + contactsLog + existingContent + (existingContent.isEmpty ? "" : "\n") + newMessages.joined(separator: "\n")
+                let contactsLog = contacts.isEmpty ? "" : "contacts:\n" + sortedContacts.map { "  \($0.key): \($0.value.lastTimestamp): \($0.value.messageCount)" }.joined(separator: "\n") + "\n"
+                
+                // Remove old stats, status_log, conversations, and contacts from existing content
+                let contentLines = existingContent.components(separatedBy: .newlines)
+                let updatedExistingContent = contentLines.drop(while: { line in
+                    line.starts(with: "stats:") || 
+                    line.starts(with: "status_log:") || 
+                    line.starts(with: "conversations:") || 
+                    line.starts(with: "contacts:") ||
+                    line.trimmingCharacters(in: .whitespaces).isEmpty
+                }).joined(separator: "\n")
+                
+                let updatedContent = statsLog + statusLog + conversationsLog + contactsLog + newMessages.joined(separator: "\n") + (newMessages.isEmpty ? "" : "\n") + updatedExistingContent
                 try updatedContent.write(to: archiveFile, atomically: true, encoding: String.Encoding.utf8)
                 
                 DispatchQueue.main.async {
@@ -406,6 +506,216 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.progressBar.isHidden = true
             }
         }
+    }
+
+    @objc func conversationSelected() {
+        guard let selectedConversation = conversationsDropdown.titleOfSelectedItem,
+              selectedConversation != "Select a conversation" else {
+            return
+        }
+        
+        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+        let archiveFile = downloadsURL.appendingPathComponent("do_not_delete_chat_archive.txt")
+        
+        do {
+            let content = try String(contentsOf: archiveFile)
+            let lines = content.components(separatedBy: .newlines)
+            
+            let filteredMessages = lines.filter { line in
+                line.starts(with: "[\(selectedConversation)]")
+            }
+            
+            DispatchQueue.main.async {
+                self.textView.string = filteredMessages.joined(separator: "\n")
+            }
+        } catch {
+            print("error reading archive file: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                self.textView.string = "error: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    @objc func contactSelected() {
+        guard let selectedItem = contactsDropdown.titleOfSelectedItem,
+              selectedItem != "Select a contact" else {
+            print("No contact selected or default option chosen")
+            return
+        }
+
+        let selectedContact = selectedItem.components(separatedBy: " (")[0]
+        print("Selected contact: \(selectedContact)")
+        
+        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+        let archiveFile = downloadsURL.appendingPathComponent("do_not_delete_chat_archive.txt")
+        
+        do {
+            let content = try String(contentsOf: archiveFile)
+            let lines = content.components(separatedBy: .newlines)
+            
+            print("Total lines in archive: \(lines.count)")
+            
+            let filteredMessages = lines.filter { line in
+                line.contains(": \(selectedContact): ") || line.contains("[\(selectedContact)]")
+            }
+            
+            print("Filtered messages count: \(filteredMessages.count)")
+            
+            DispatchQueue.main.async {
+                if filteredMessages.isEmpty {
+                    self.textView.string = "No messages found for contact: \(selectedContact)"
+                } else {
+                    self.textView.string = filteredMessages.joined(separator: "\n")
+                }
+            }
+        } catch {
+            print("Error reading archive file: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                self.textView.string = "Error: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    @objc func addToAIChat() {
+        guard let selectedItem = contactsDropdown.titleOfSelectedItem,
+              selectedItem != "Select a contact" else {
+            print("No contact selected or default option chosen")
+            return
+        }
+
+        let selectedContact = selectedItem.components(separatedBy: " (")[0]
+        print("Adding contact to AI chat: \(selectedContact)")
+
+        // Try to load the API key from Keychain
+        if let apiKey = loadAPIKeyFromKeychain() {
+            self.openAI = OpenAIClient(apiKey: apiKey)
+            self.performAIAnalysis(for: selectedContact)
+        } else {
+            // Show modal to input API key if not found in Keychain
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                alert.messageText = "Enter OpenAI API Key"
+                alert.informativeText = "Please enter your OpenAI API key to proceed with the analysis."
+                alert.alertStyle = .informational
+                alert.addButton(withTitle: "OK")
+                alert.addButton(withTitle: "Cancel")
+
+                let inputTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+                inputTextField.placeholderString = "sk-..."
+                alert.accessoryView = inputTextField
+
+                let response = alert.runModal()
+                
+                guard response == .alertFirstButtonReturn else {
+                    print("API key input cancelled")
+                    return
+                }
+
+                let apiKey = inputTextField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !apiKey.isEmpty else {
+                    print("API key is empty")
+                    return
+                }
+
+                // Save the API key to Keychain
+                self.saveAPIKeyToKeychain(apiKey)
+
+                // Initialize OpenAI client with the provided API key
+                self.openAI = OpenAIClient(apiKey: apiKey)
+
+                self.performAIAnalysis(for: selectedContact)
+            }
+        }
+    }
+
+    func performAIAnalysis(for contact: String) {
+        // Get the chat history for the selected contact
+        let chatHistory = self.getChatHistoryForContact(contact)
+
+        // Prepare the prompt for GPT-4
+        let prompt = """
+        The following is a chat history with \(contact). Please analyze this conversation and provide a summary of the key points, topics discussed, and any notable patterns or insights:
+
+        \(chatHistory)
+
+        Summary:
+        """
+
+        // Show loading spinner
+        DispatchQueue.main.async {
+            self.loadingSpinner.startAnimation(nil)
+            self.textView.string = "Analyzing chat history for \(contact)..."
+        }
+
+        // Make the API call to OpenAI
+        self.openAI?.sendCompletion(prompt: prompt) { result in
+            DispatchQueue.main.async {
+                self.loadingSpinner.stopAnimation(nil)
+                
+                switch result {
+                case .success(let content):
+                    self.textView.string = "AI Analysis for \(contact):\n\n\(content)"
+                case .failure(let error):
+                    print("OpenAI API Error: \(error.localizedDescription)")
+                    self.textView.string = "Error: Unable to generate AI analysis. Please try again."
+                }
+            }
+        }
+    }
+
+    func getChatHistoryForContact(_ contact: String) -> String {
+        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+        let archiveFile = downloadsURL.appendingPathComponent("do_not_delete_chat_archive.txt")
+        
+        do {
+            let content = try String(contentsOf: archiveFile)
+            let lines = content.components(separatedBy: .newlines)
+            
+            let filteredMessages = lines.filter { line in
+                line.contains(": \(contact): ") || line.contains("[\(contact)]")
+            }
+            
+            return filteredMessages.joined(separator: "\n")
+        } catch {
+            print("Error reading archive file: \(error.localizedDescription)")
+            return "Error: Unable to retrieve chat history."
+        }
+    }
+
+    func saveAPIKeyToKeychain(_ apiKey: String) {
+        let keyData = apiKey.data(using: .utf8)!
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychainService,
+            kSecAttrAccount as String: keychainAccount,
+            kSecValueData as String: keyData
+        ]
+
+        SecItemDelete(query as CFDictionary)
+        let status = SecItemAdd(query as CFDictionary, nil)
+        if status != errSecSuccess {
+            print("error saving api key to keychain: \(status)")
+        }
+    }
+
+    func loadAPIKeyFromKeychain() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychainService,
+            kSecAttrAccount as String: keychainAccount,
+            kSecReturnData as String: true
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        if status == errSecSuccess {
+            if let data = result as? Data,
+               let apiKey = String(data: data, encoding: .utf8) {
+                return apiKey
+            }
+        }
+        return nil
     }
 }
 
