@@ -2,6 +2,7 @@ import Cocoa
 import ApplicationServices
 import Accessibility
 import AppKit
+import CoreGraphics
 
 let kAXLabelAttribute = "AXLabel" as CFString
 let kAXIdentifierAttribute = "AXIdentifier" as CFString
@@ -28,7 +29,7 @@ func printElementInfo(_ element: AXUIElement, indent: String = "") {
     AXUIElementCopyAttributeValue(element, kAXTitleAttribute as CFString, &value)
     let title = value as? String ?? "No Title"
     
-    print("\(indent)Role: \(role), Title: \(title)")
+    // print("\(indent)Role: \(role), Title: \(title)")
     
     AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &value)
     if let children = value as? [AXUIElement] {
@@ -110,15 +111,15 @@ func clickChatsItem() {
         return
     }
 
-    print("clickable elements:")
+    // print("clickable elements:")
     printClickableElements(window)
     
     // now click on the Chats element
-    print("attempting to click on Chats element...")
+    // print("attempting to click on Chats element...")
     clickElementWithLabel("Chats", in: window)
     
     // Add this line to print all children after attempting to click
-    print("all children after click attempt:")
+    // print("all children after click attempt:")
     printAllChildren(window)
 }
 
@@ -146,7 +147,7 @@ func printClickableElements(_ element: AXUIElement, indent: String = "") {
         AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute as CFString, &value)
         let description = value as? String ?? "No Description"
         
-        print("\(indent)[\(role)] \(title) - \(description)")
+        // print("\(indent)[\(role)] \(title) - \(description)")
     }
     
     // recursively check children
@@ -169,16 +170,16 @@ func printElementAttributes(_ element: AXUIElement) {
     let result = AXUIElementCopyAttributeNames(element, &attributeNames)
     
     guard result == .success, let attributes = attributeNames as? [String] else {
-        print("failed to get attribute names")
+        // print("failed to get attribute names")
         return
     }
     
-    print("element attributes:")
+    // print("element attributes:")
     for attributeName in attributes {
         var value: AnyObject?
         let result = AXUIElementCopyAttributeValue(element, attributeName as CFString, &value)
         if result == .success {
-            print("  \(attributeName): \(value.map { String(describing: $0) } ?? "nil")")
+            // print("  \(attributeName): \(value.map { String(describing: $0) } ?? "nil")")
         }
     }
 }
@@ -187,21 +188,21 @@ func getChildByRole(of element: AXUIElement, role: String) -> AXUIElement? {
     var value: AnyObject?
     AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &value)
     guard let children = value as? [AXUIElement] else { 
-        print("no children found for element")
+        // print("no children found for element")
         return nil 
     }
     
     for child in children {
         AXUIElementCopyAttributeValue(child, kAXRoleAttribute as CFString, &value)
         if let childRole = value as? String {
-            print("found child with role: \(childRole)")
+            // print("found child with role: \(childRole)")
             if childRole == role {
                 return child
             }
         }
     }
     
-    print("no child found with role: \(role)")
+    // print("no child found with role: \(role)")
     return nil
 }
 
@@ -264,13 +265,13 @@ func printAllChildren(_ element: AXUIElement) {
     var value: AnyObject?
     AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &value)
     guard let children = value as? [AXUIElement] else { 
-        print("no children found")
+        // print("no children found")
         return 
     }
     
-    print("children found: \(children.count)")
+    // print("children found: \(children.count)")
     for (index, child) in children.enumerated() {
-        print("child \(index):")
+        // print("child \(index):")
         printElementAttributes(child)
     }
 }
@@ -280,32 +281,32 @@ func clickElementWithLabel(_ label: String, in element: AXUIElement, indent: Str
     var value: AnyObject?
     AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &value)
     guard let children = value as? [AXUIElement] else { 
-        print("\(indent)no children found")
+        // print("\(indent)no children found")
         return 
     }
     
-    print("\(indent)searching through \(children.count) children")
+    // print("\(indent)searching through \(children.count) children")
     
     for child in children {
         AXUIElementCopyAttributeValue(child, kAXRoleAttribute as CFString, &value)
         guard let role = value as? String else { 
-            print("\(indent)  child has no role")
+            // print("\(indent)  child has no role")
             continue 
         }
         
-        print("\(indent)  checking child with role: \(role)")
+        // print("\(indent)  checking child with role: \(role)")
         
         if role == "AXStaticText" {
             // Check for description (which seems to contain the "Chats" text)
             AXUIElementCopyAttributeValue(child, kAXDescriptionAttribute as CFString, &value)
             let description = value as? String ?? ""
             
-            print("\(indent)    found AXStaticText with description: \(description)")
+            // print("\(indent)    found AXStaticText with description: \(description)")
             
             if description.contains(label) {
-                print("\(indent)    attempting to click...")
+                // print("\(indent)    attempting to click...")
                 let result = AXUIElementPerformAction(child, kAXPressAction as CFString)
-                print("\(indent)    click result: \(result == .success ? "success" : "failure")")
+                // print("\(indent)    click result: \(result == .success ? "success" : "failure")")
                 return
             }
         }
@@ -352,7 +353,7 @@ func reviewClickableElements(_ element: AXUIElement, indent: String = "") {
         elementValue = value as? String ?? elementValue
         
         if ["AXButton", "AXMenuItem", "AXRadioButton", "AXCheckBox", "AXStaticText"].contains(role) {
-            print("\(indent)[\(role)] Description: \(description), Label: \(label), Title: \(title), Type: \(type), Value: \(elementValue)")
+            // print("\(indent)[\(role)] Description: \(description), Label: \(label), Title: \(title), Type: \(type), Value: \(elementValue)")
         }
         
         // recursively review child elements
@@ -378,19 +379,19 @@ func clickExportChat() {
         return
     }
 
-    print("Searching for 'Export chat' button...")
+    // print("Searching for 'Export chat' button...")
 
     let timeout: TimeInterval = 10
     let startTime = Date()
 
     while Date().timeIntervalSince(startTime) < timeout {
         if let exportChatButton = findElementByRoleAndAttributes(in: mainWindow, role: kAXButtonRole as String, searchText: "Export chat") {
-            print("Found 'Export chat' button, attempting to click...")
+            // print("Found 'Export chat' button, attempting to click...")
             let result = AXUIElementPerformAction(exportChatButton, kAXPressAction as CFString)
             if result == .success {
                 print("Successfully clicked 'Export chat' button")
             } else {
-                print("Failed to click 'Export chat' button")
+                // print("Failed to click 'Export chat' button")
             }
             return
         } else {
@@ -411,7 +412,7 @@ func findElementByRoleAndAttributes(in element: AXUIElement, role: String, searc
     let elementRole = value as? String ?? ""
 
     let indent = String(repeating: "  ", count: depth)
-    print("\(indent)checking element: role = \(elementRole)")
+    // print("\(indent)checking element: role = \(elementRole)")
 
     // check if current element matches the role
     if elementRole == role {
@@ -420,14 +421,14 @@ func findElementByRoleAndAttributes(in element: AXUIElement, role: String, searc
         AXUIElementCopyAttributeNames(element, &attributeNames)
         
         if let attributeArray = attributeNames as? [String] {
-            print("\(indent)attributes found: \(attributeArray.joined(separator: ", "))")
+            // print("\(indent)attributes found: \(attributeArray.joined(separator: ", "))")
             
             for attribute in attributeArray {
                 AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
                 if let attributeValue = value as? String {
-                    print("\(indent)  \(attribute) = \(attributeValue)")
+                    // print("\(indent)  \(attribute) = \(attributeValue)")
                     if attributeValue.contains(searchText) {
-                        print("\(indent)found matching element with \(attribute) = \(attributeValue)")
+                        // print("\(indent)found matching element with \(attribute) = \(attributeValue)")
                         return element
                     }
                 }
@@ -451,12 +452,12 @@ func findElementByRoleAndAttributes(in element: AXUIElement, role: String, searc
 }
 
 
-func clickChatItem(at index: Int) {
+func clickChatItem(at index: Int) -> Bool {
     guard let app = NSWorkspace.shared.runningApplications.first(where: {
         $0.bundleIdentifier == "net.whatsapp.WhatsApp"
     }) else {
         print("WhatsApp is not running")
-        return
+        return false
     }
 
     let appRef = AXUIElementCreateApplication(app.processIdentifier)
@@ -466,10 +467,10 @@ func clickChatItem(at index: Int) {
     AXUIElementCopyAttributeValue(appRef, kAXMainWindowAttribute as CFString, &value)
     guard let mainWindow = value as! AXUIElement? else {
         print("Could not get main window")
-        return
+        return false
     }
 
-    print("Searching for chat item at index \(index)...")
+    // print("Searching for chat item at index \(index)...")
 
     // Wait for the chat list to appear
     let timeout: TimeInterval = 10
@@ -485,7 +486,7 @@ func clickChatItem(at index: Int) {
             depth: 0,
             currentCount: &currentCount
         ) {
-            print("Found chat item at index \(index), attempting to click...")
+            // print("Found chat item at index \(index), attempting to click...")
 
             // Print more details about the found element
             var descriptionValue: AnyObject?
@@ -502,28 +503,29 @@ func clickChatItem(at index: Int) {
             var isEnabledValue: AnyObject?
             if AXUIElementCopyAttributeValue(chatItem, kAXEnabledAttribute as CFString, &isEnabledValue) == .success,
                let isEnabled = isEnabledValue as? Bool {
-                print("Element isEnabled: \(isEnabled)")
+                // print("Element isEnabled: \(isEnabled)")
             } else {
-                print("Could not determine if element is enabled")
+                // print("Could not determine if element is enabled")
             }
 
-            print("Waiting for 500 milliseconds...")
+            // print("Waiting for 500 milliseconds...")
             usleep(500_000)
 
             // Try performing the press action
             let result = AXUIElementPerformAction(chatItem, kAXPressAction as CFString)
             if result == .success {
-                print("Successfully clicked on chat item at index \(index)")
+                // print("Successfully clicked on chat item at index \(index)")
             } else {
                 print("Failed to click on the chat item")
             }
-            return
+            return true
         } else {
             usleep(200_000) // Sleep for 200 milliseconds
         }
     }
 
-    print("Could not find chat item at index \(index) within timeout")
+    print("Could not find chat item at index \(index) within timeout. Probably reached end of chat history.")
+    return false
 }
 
 
@@ -543,16 +545,16 @@ func findElementByRoleAndAttributeValue(
     let elementRole = value as? String ?? ""
 
     let indent = String(repeating: "  ", count: depth)
-    print("\(indent)Checking element: Role = \(elementRole)")
+    // print("\(indent)Checking element: Role = \(elementRole)")
 
     // Check if current element matches the role
     if elementRole == role {
         // Get the attribute value
         AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
         if let attributeValue = value as? String {
-            print("\(indent)  \(attribute) = \(attributeValue)")
+            // print("\(indent)  \(attribute) = \(attributeValue)")
             if attributeValue.contains(searchText) {
-                print("\(indent)Found matching element with \(attribute) = \(attributeValue)")
+                // print("\(indent)Found matching element with \(attribute) = \(attributeValue)")
                 return element
             }
         }
@@ -562,9 +564,9 @@ func findElementByRoleAndAttributeValue(
     if elementRole == "AXButton" {
         AXUIElementCopyAttributeValue(element, kAXHelpAttribute as CFString, &value)
         if let helpValue = value as? String {
-            print("\(indent)  AXHelp = \(helpValue)")
+            // print("\(indent)  AXHelp = \(helpValue)")
             if helpValue.contains(searchText) {
-                print("\(indent)Found matching button with AXHelp = \(helpValue)")
+                // print("\(indent)Found matching button with AXHelp = \(helpValue)")
                 return element
             }
         }
@@ -604,7 +606,7 @@ func findElementByRoleAttributeValueAndIndex(
     let elementRole = value as? String ?? ""
 
     let indent = String(repeating: "  ", count: depth)
-    print("\(indent)Checking element: Role = \(elementRole)")
+    // print("\(indent)Checking element: Role = \(elementRole)")
 
     // Check if current element matches the role
     if elementRole == role {
@@ -616,13 +618,13 @@ func findElementByRoleAttributeValueAndIndex(
         AXUIElementCopyAttributeValue(element, kAXHelpAttribute as CFString, &value)
         let help = value as? String ?? ""
 
-        print("\(indent)  Description = '\(description)', Help = '\(help)'")
+        // print("\(indent)  Description = '\(description)', Help = '\(help)'")
 
         if help.contains(searchText) {
             currentCount += 1
-            print("\(indent)  Matching element found. Current count: \(currentCount)")
+            // print("\(indent)  Matching element found. Current count: \(currentCount)")
             if currentCount == index {
-                print("\(indent)Found matching element at index \(index)")
+                // print("\(indent)Found matching element at index \(index)")
                 return element
             }
         }
@@ -667,7 +669,7 @@ func printElementHierarchy(_ element: AXUIElement, depth: Int = 0) {
     AXUIElementCopyAttributeValue(element, kAXValueAttribute as CFString, &value)
     let elementValue = value as? String ?? "No Value"
 
-    print("\(indent)Role: \(role), Title: \(title), Description: \(description), Value: \(elementValue)")
+    // print("\(indent)Role: \(role), Title: \(title), Description: \(description), Value: \(elementValue)")
 
     // Recursively print children
     AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &value)
@@ -690,7 +692,7 @@ func clickWithoutMediaButton() {
 
     let appRef = AXUIElementCreateApplication(app.processIdentifier)
 
-    print("Searching for 'Without media' button by identifier in application...")
+    // print("Searching for 'Without media' button by identifier in application...")
 
     // Search recursively in the application
     if let withoutMediaButton = findElementByRoleAndIdentifier(
@@ -698,7 +700,7 @@ func clickWithoutMediaButton() {
         role: kAXButtonRole as String,
         identifier: "action-button--998"
     ) {
-        print("Found 'Without media' button, attempting to click...")
+        // print("Found 'Without media' button, attempting to click...")
         performClickOnElement(withoutMediaButton, app: app)
         return
     } else {
@@ -724,10 +726,10 @@ func findElementByRoleAndIdentifier(
     let elementIdentifier = value as? String ?? ""
 
     // For debugging
-    print("\(indent)Role: \(elementRole), Identifier: \(elementIdentifier)")
+    // print("\(indent)Role: \(elementRole), Identifier: \(elementIdentifier)")
 
     if elementRole == role && elementIdentifier == identifier {
-        print("\(indent)Found matching element with role: \(role), identifier: \(identifier)")
+        // print("\(indent)Found matching element with role: \(role), identifier: \(identifier)")
         return element
     }
 
@@ -754,7 +756,7 @@ func performClickOnElement(_ element: AXUIElement, app: NSRunningApplication) {
     // Try performing the press action
     let result = AXUIElementPerformAction(element, kAXPressAction as CFString)
     if result == .success {
-        print("Successfully clicked button")
+        // print("Successfully clicked button")
     } else {
         print("Failed to click 'Without media' button, attempting to simulate mouse click...")
 
@@ -778,7 +780,7 @@ func performClickOnElement(_ element: AXUIElement, app: NSRunningApplication) {
 
                 // Simulate mouse click
                 clickAtPoint(point: adjustedPoint)
-                print("Simulated mouse click at \(adjustedPoint)")
+                // print("Simulated mouse click at \(adjustedPoint)")
             } else {
                 print("Could not get screen height")
             }
@@ -822,10 +824,10 @@ func findElementByRoleAndTitleContains(
         .trimmingCharacters(in: .whitespacesAndNewlines)
 
     // For debugging
-    print("\(indent)Role: \(elementRole), Title: '\(elementTitle)'")
+    // print("\(indent)Role: \(elementRole), Title: '\(elementTitle)'")
 
     if elementRole == role && elementTitle.localizedCaseInsensitiveContains(searchTitle) {
-        print("\(indent)Found matching element with role: \(role), title contains: '\(elementTitle)'")
+        // print("\(indent)Found matching element with role: \(role), title contains: '\(elementTitle)'")
         return element
     }
 
@@ -858,14 +860,14 @@ func waitForExportCompletionAlertAndClickOK(timeout: TimeInterval) -> Bool {
 
     let appRef = AXUIElementCreateApplication(app.processIdentifier)
 
-    print("Waiting for export completion alert...")
+    // print("Waiting for export completion alert...")
 
     let startTime = Date()
 
     while Date().timeIntervalSince(startTime) < timeout {
         let alertSheets = findAllAlertSheets(in: appRef)
         if alertSheets.isEmpty {
-            print("No alert sheets found")
+            // print("No alert sheets found")
         } else {
             for alertSheet in alertSheets {
                 if let okButton = findElementByRoleAndTitleContains(
@@ -887,7 +889,7 @@ func waitForExportCompletionAlertAndClickOK(timeout: TimeInterval) -> Bool {
 }
 
 func listButtonsInAlert(_ alertSheet: AXUIElement) {
-    print("Listing buttons in alert sheet:")
+    // print("Listing buttons in alert sheet:")
     var value: AnyObject?
     AXUIElementCopyAttributeValue(alertSheet, kAXChildrenAttribute as CFString, &value)
     if let children = value as? [AXUIElement] {
@@ -897,7 +899,7 @@ func listButtonsInAlert(_ alertSheet: AXUIElement) {
             if role == kAXButtonRole as String {
                 AXUIElementCopyAttributeValue(child, kAXTitleAttribute as CFString, &value)
                 let title = value as? String ?? ""
-                print("  Button with title: '\(title)'")
+                // print("  Button with title: '\(title)'")
             }
         }
     }
@@ -944,10 +946,10 @@ func findElementByRoleAndSubrole(
     let elementSubrole = value as? String ?? ""
 
     // For debugging
-    print("\(indent)Role: \(elementRole), Subrole: \(elementSubrole)")
+    // print("\(indent)Role: \(elementRole), Subrole: \(elementSubrole)")
 
     if elementRole == role && elementSubrole == subrole {
-        print("\(indent)Found matching element with role: \(role), subrole: \(subrole)")
+        // print("\(indent)Found matching element with role: \(role), subrole: \(subrole)")
         return element
     }
 
@@ -980,13 +982,20 @@ func exportChats(startIndex: Int, count: Int) {
 
     for i in startIndex...(startIndex + count - 1) {
         print("\n--- Processing chat \(i - startIndex + 1) of \(count) (index: \(i)) ---")        
-        clickChatItem(at: i)
+        if !clickChatItem(at: i) {
+            print("Exiting export process.")
+            break
+        }
         usleep(500_000)
         clickWithoutMediaButton()
         usleep(200_000)
         // Wait for the export completion alert and click OK
         if waitForExportCompletionAlertAndClickOK(timeout: 60) { // 60 second timeout
             print("Successfully exported chat \(i)")
+            
+            // Add scrolling action here
+            scrollChatList(pixels: 70) // Adjust the number of lines as needed
+            usleep(1_000_000)  // Wait for 1 second after scrolling
         } else {
             print("Failed to export chat \(i) or timed out waiting for completion")
         }
@@ -994,6 +1003,96 @@ func exportChats(startIndex: Int, count: Int) {
     print("Finished processing \(count) chats")
 }
 
+func scrollChatList(pixels: CGFloat) {
+    guard let app = NSWorkspace.shared.runningApplications.first(where: { 
+        $0.bundleIdentifier == "net.whatsapp.WhatsApp"
+    }) else {
+        print("WhatsApp is not running")
+        return
+    }
+
+    let appRef = AXUIElementCreateApplication(app.processIdentifier)
+
+    // Get the main window
+    var value: AnyObject?
+    let result = AXUIElementCopyAttributeValue(appRef, kAXMainWindowAttribute as CFString, &value)
+    if result != .success {
+        print("Failed to get main window. Error: \(result)")
+        return
+    }
+    guard let mainWindow = value as! AXUIElement? else {
+        print("Could not cast main window to AXUIElement")
+        return
+    }
+
+    // Get the position of the main window
+    var positionValue: AnyObject?
+    let positionResult = AXUIElementCopyAttributeValue(mainWindow, kAXPositionAttribute as CFString, &positionValue)
+    if positionResult != .success {
+        print("Failed to get window position. Error: \(positionResult)")
+        return
+    }
+    
+    print("Position value type: \(type(of: positionValue))")
+    
+    var position: CGPoint
+    if let axValue = positionValue as! AXValue? {
+        var tempValue = CGPoint.zero
+        AXValueGetValue(axValue, .cgPoint, &tempValue)
+        position = tempValue
+    } else if let pointValue = positionValue as? CGPoint {
+        position = pointValue
+    } else {
+        print("Unexpected position value type: \(type(of: positionValue))")
+        return
+    }
+
+    // Get the size of the main window
+    var sizeValue: AnyObject?
+    let sizeResult = AXUIElementCopyAttributeValue(mainWindow, kAXSizeAttribute as CFString, &sizeValue)
+    if sizeResult != .success {
+        print("Failed to get window size. Error: \(sizeResult)")
+        return
+    }
+    
+    print("Size value type: \(type(of: sizeValue))")
+    
+    var size: CGSize
+    if let axValue = sizeValue as! AXValue? {
+        var tempValue = CGSize.zero
+        AXValueGetValue(axValue, .cgSize, &tempValue)
+        size = tempValue
+    } else if let sizeValue = sizeValue as? CGSize {
+        size = sizeValue
+    } else {
+        print("Unexpected size value type: \(type(of: sizeValue))")
+        return
+    }
+
+    print("Window position: \(position), size: \(size)")
+
+    // Calculate a point in the left part of the window where the chat list likely is
+    let scrollPoint = CGPoint(x: position.x + size.width * 0.75, y: position.y + size.height / 2)
+    // Create a scroll wheel event
+    // Perform multiple scroll attempts with delays
+    for _ in 1...5 {  // Attempt to scroll 5 times
+        // Move mouse to the scroll point
+        let mouseMoveEvent = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: scrollPoint, mouseButton: .left)
+        mouseMoveEvent?.post(tap: .cghidEventTap)
+        
+        // Perform scroll
+        let scrollEvent = CGEvent(scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 1, wheel1: Int32(-pixels / 5), wheel2: 0, wheel3: 0)
+        scrollEvent?.post(tap: .cghidEventTap)
+        
+        print("Scroll event posted at point: \(scrollPoint)")
+        
+        // Wait between scroll attempts
+        usleep(100_000)  // 100ms delay
+    }
+
+    // Wait a short time for the scroll to complete
+    usleep(100_000) // 100ms
+}
 // Main execution
 clickSettingsMenuItem()
 usleep(500_000) // Wait for 500ms after clicking Settings
@@ -1001,4 +1100,4 @@ clickChatsItem()
 usleep(500_000) // Wait for 500ms after clicking Chats
 clickExportChat()
 usleep(200_000)
-exportChats(startIndex: 2, count: 17)
+exportChats(startIndex: 16, count: 17)
