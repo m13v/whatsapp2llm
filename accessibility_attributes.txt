@@ -1,0 +1,510 @@
+Attribute values for Cursor:
+[1] Terminal 8, all_attributes Use ⌥F1 for terminal accessibility help
+[1] swiftc print_all_attributes.swift -o print_all_attributes_app -framework Cocoa -framework ApplicationServices -framework CoreFoundation -framework CoreGraphics
+./print_all_attributes_app
+[8] ⌘K to generate a command
+[8] dation -framework CoreGraphics
+[8] ./print_all_attributes_app
+[8] Output written to /Users/matthewdi/Desktop/screenpipe/whatsapp_autoresponder/accessibility_attributes.txt
+[8] (base) matthewdi@Mac whatsapp_autoresponder % swiftc print_all_attributes.swift -o print_all_attributes_app -framework Cocoa -framework ApplicationServices -framework CoreFoun
+[8] print_all_attributes.swift:33:65: error: initializer for conditional binding must have Optional type, not 'String'
+[8] (base) matthewdi@Mac whatsapp_autorespon
+[11] 3 of 3 found for 'print', at 103:9
+[11] No results found for 'recent chats'
+[14] remote
+[14] whatsapp_autoresponder (Git) - main*, Checkout Branch/Tag...
+[14] whatsapp_autoresponder (Git) - Synchronize Changes
+[14] Show the GitLens Commit Graph
+[14] rocket mediar-ai/scap#3 needs reviewers, GitLens Launchpad ᴘʀᴏ    &mdash;    [$(question)](command:gitlens.launchpad.indicator.action?%22info%22 "What is this?") [$(gear)](command:workbench.action.openSettings?%22gitlens.launchpad%22 "Settings")  |  [$(circle-slash) Hide](command:gitlens.launchpad.indicator.action?%22hide%22 "Hide") --- [Launchpad](command:gitlens.launchpad.indicator.action?%info%22 "Learn about Launchpad") organizes your pull requests into actionable groups to help you focus and keep your team unblocked. It's always accessible using the `GitLens: Open Launchpad` command from the Command Palette. --- <span style="color:var(--vscode-gitlens-launchpadIndicatorBlockedColor);">$(error)</span>$(blank) [mediar-ai/scap#3 and 4 other pull requests are blocked](command:gitlens.showLaunchpad?%7B%22source%22%3A%22launchpad-indicator%22%2C%22state%22%3A%7B%22initialGroup%22%3A%22blocked%22%2C%22selectTopItem%22%3Atrue%7D%7D "Open Blocked in Launchpad")\ $(blank)$(blank) (2 need reviewers, 2 failed CI checks, 1 has conflicts) --- <span style="color:var(--vscode-gitlens-launchpadIndicatorAttentionHoverColor);">$(comment-unresolved)</span>$(blank) [1 pull request needs your review](command:gitlens.showLaunchpad?%7B%22source%22%3A%22launchpad-indicator%22%2C%22state%22%3A%7B%22initialGroup%22%3A%22needs-review%22%2C%22selectTopItem%22%3Atrue%7D%7D "Open Needs Your Review in Launchpad") --- <span style="color:var(--vscode-gitlens-launchpadIndicatorAttentionHoverColor);">$(report)</span>$(blank) [1 pull request requires follow-up](command:gitlens.showLaunchpad?%7B%22source%22%3A%22launchpad-indicator%22%2C%22state%22%3A%7B%22initialGroup%22%3A%22follow-up%22%2C%22selectTopItem%22%3Atrue%7D%7D "Open Follow-Up in Launchpad")
+[14] No Problems
+[14] No Ports Forwarded
+[14] database Connect, Select a SQLTools connection
+[14] live-share Live Share
+[14] server 127.0.0.1
+[14] Notifications
+[14] loading~spin, Fauxpilot - Working
+[14] octx-logo, Disable OpenCtx
+[14] cody-logo-heavy Sign In, Sign in to get started with Cody
+[14] Cursor Tab
+[14] Plain Text
+[14] LF
+[14] UTF-8
+[14] Spaces: 4
+[14] Ln 75, Col 1
+[14] Screen Reader Optimized
+[14] Window Zoom
+[15] Title actions
+[15] Terminal tabs
+[16] Go Back (⌃-)
+[16] Go Forward (⌃⇧-)
+[16] Toggle Primary Side Bar (⌘B)
+[16] Toggle Panel (⌘J)
+[16] Toggle AI Pane (⌥⌘B)
+[16] Open Cursor Settings (⇧⌘J)
+[16]  main*
+[16]  mediar-ai/scap#3 needs reviewers
+[16]  0 
+[16]  0
+[16]  Connect
+[16]  Live Share
+[16]  127.0.0.1
+[16]  Sign In
+[17] screenpipe
+[17] Terminal 7 export
+[17] Terminal 1 swift-frontend
+[17] Terminal 4 whatsapp2llm
+[17] Terminal 5 git
+[17] Terminal 6 screenpipe
+[17] Terminal 8 all_attributes
+[18] $(terminal) export
+[18] $(terminal) swift-frontend
+[18] $(terminal) whatsapp2llm
+[18] $(terminal) git
+[18] $(terminal) screenpipe
+[18] $(terminal) all_attributes
+[20] Update Cursor?
+[20] Active View Switcher
+[20] Terminal actions
+[20]  export
+[20] whatsapp_autoresponder
+[20]  swift-frontend
+[20]  whatsapp2llm
+[20]  git
+[20]  screenpipe
+[20] screen-pipe
+[20]  all_attributes
+[21] Read the changelog.
+[21] Terminal (⌃`)
+[21] New Terminal (⌃⇧`) [⌥] Split Terminal (⌘\)
+[21] Maximize Panel Size
+[21] Hide Panel
+[22] Problems (⇧⌘M)
+[22] Output (⇧⌘U)
+[22] Debug Console (⇧⌥⌘Y)
+[22] Ports
+[22] GitLens
+[22] SQL Console
+[22] Comments
+[23] Open Editors Section
+[23] Explorer Section: screenpipe
+[23] Outline Section
+[23] Timeline Section
+[23] PROBLEMS
+[23] OUTPUT
+[23] DEBUG CONSOLE
+[23] TERMINAL
+[23] PORTS
+[23] GITLENS
+[23] SQL CONSOLE
+[23] COMMENTS
+[23] Launch Profile...
+[23] Views and More Actions...
+[24] Files Explorer
+[25] OPEN EDITORS
+[25] SCREENPIPE
+[25] .cargo
+[25] .github
+[25] content
+[25] data
+[25] examples
+[25] Formula
+[25] screenpipe-app-tauri
+[25] screenpipe-audio
+[25] screenpipe-core
+[25] screenpipe-integrations
+[25] screenpipe-server
+[25] screenpipe-vision
+[25] target
+[25] text_json
+[25] .gitignore
+[25] Cargo.lock
+[25] Cargo.toml
+[25] CONTRIBUTING.md
+[25] LICENSE.md
+[25] README.md
+[25] tauri_key_louis.key
+[25] screen-pipe-website
+[25] summarize_recent_commit
+[25] summarizer
+[25] .env
+[25] context_updater.py
+[25] conversation_feedback.md
+[25] conversations.py
+[25] deduplicate.py
+[25] messenger_summarizer.py
+[25] ocr_data.db
+[25] process_intermediate_data.py
+[25] process_responses.py
+[25] telegram.json
+[25] unique_app_window_names2.json
+[25] unused
+[25] .build
+[25] print_all_attributes
+[25] OUTLINE
+[25] TIMELINE
+[25] accessibility_attributes.txt, preview, Editor Group 1
+[25] qt_screenpipe.rtf, Editor Group 2
+[27] Editor actions
+[28] ~/Desktop/screenpipe/screen-pipe • Contains emphasized items
+[28] ~/Desktop/screenpipe/screen-pipe/.cargo
+[28] ~/Desktop/screenpipe/screen-pipe/.github
+[28] ~/Desktop/screenpipe/screen-pipe/content
+[28] ~/Desktop/screenpipe/screen-pipe/data
+[28] ~/Desktop/screenpipe/screen-pipe/examples
+[28] ~/Desktop/screenpipe/screen-pipe/Formula
+[28] ~/Desktop/screenpipe/screen-pipe/screenpipe-app-tauri • Contains emphasized items
+[28] ~/Desktop/screenpipe/screen-pipe/screenpipe-audio
+[28] ~/Desktop/screenpipe/screen-pipe/screenpipe-core
+[28] ~/Desktop/screenpipe/screen-pipe/screenpipe-integrations
+[28] ~/Desktop/screenpipe/screen-pipe/screenpipe-server
+[28] ~/Desktop/screenpipe/screen-pipe/screenpipe-vision • Contains emphasized items
+[28] ~/Desktop/screenpipe/screen-pipe/target
+[28] ~/Desktop/screenpipe/screen-pipe/text_json
+[28] ~/Desktop/screenpipe/screen-pipe/.gitignore
+[28] ~/Desktop/screenpipe/screen-pipe/Cargo.lock
+[28] ~/Desktop/screenpipe/screen-pipe/Cargo.toml • Incoming Changes (modified)
+[28] ~/Desktop/screenpipe/screen-pipe/CONTRIBUTING.md
+[28] ~/Desktop/screenpipe/screen-pipe/LICENSE.md
+[28] ~/Desktop/screenpipe/screen-pipe/README.md • Incoming Changes (modified)
+[28] ~/Desktop/screenpipe/screen-pipe/tauri_key_louis.key
+[28] ~/Desktop/screenpipe/screen-pipe-website
+[28] ~/Desktop/screenpipe/summarize_recent_commit
+[28] ~/Desktop/screenpipe/summarizer
+[28] ~/Desktop/screenpipe/summarizer/.env
+[28] ~/Desktop/screenpipe/summarizer/context_updater.py
+[28] ~/Desktop/screenpipe/summarizer/conversation_feedback.md
+[28] ~/Desktop/screenpipe/summarizer/conversations.py
+[28] ~/Desktop/screenpipe/summarizer/deduplicate.py
+[28] ~/Desktop/screenpipe/summarizer/messenger_summarizer.py
+[28] ~/Desktop/screenpipe/summarizer/ocr_data.db
+[28] ~/Desktop/screenpipe/summarizer/process_intermediate_data.py
+[28] ~/Desktop/screenpipe/summarizer/process_responses.py
+[28] ~/Desktop/screenpipe/summarizer/telegram.json
+[28] ~/Desktop/screenpipe/summarizer/unique_app_window_names2.json
+[28] ~/Desktop/screenpipe/unused
+[28] ~/Desktop/screenpipe/whatsapp_autoresponder • Contains emphasized items
+[28] ~/Desktop/screenpipe/whatsapp_autoresponder/.build
+[28] ~/Desktop/screenpipe/whatsapp_autoresponder/print_all_attributes • Contains emphasized items
+[28] print_all_attributes.swift, Editor Group 1
+[28] main.rs, Editor Group 1
+[28] README.md, Editor Group 1
+[28] script.swift, Editor Group 1
+[28] main.swift, Editor Group 1
+[28] openai.swift, Editor Group 1
+[28] Package.swift, Editor Group 1
+[28] wa.swift, Editor Group 1
+[28] .gitignore, Editor Group 1
+[28] ~/Desktop/screenpipe/whatsapp_autoresponder/accessibility_attributes.txt • Untracked
+[28] Attribute values for Cursor:
+[1] Terminal 8, all_attributes Use ⌥F1 for terminal accessibility help
+[1] swiftc print_all_attributes.swift -o print_all_attributes_app -framework Cocoa -framework ApplicationServices -framework CoreFoundation -framework CoreGraphics
+./print_all_attributes_app
+
+[28] Split Editor Right (⌘\) [⌥] Split Editor Down
+[28] /Users • Contains emphasized items
+[28] /Users/matthewdi • Contains emphasized items
+[28] ~/Documents
+[28] ~/Documents/qt_screenpipe.rtf
+[28] DAILY ROUTINE
+talk to users
+code
+post
+
+PRIORITIES
+talk to users
+makes things reliable
+test locally different scenarios (remember how i forgot to include vad_engine, cli code)
+run all benchmarks before trying to merge
+use enums instead of strings (we're not writing python or JS, save time) and use rust feats to easily convert to string for db
+separate concerns / code, we should never have files with more than 500 lines of code, db is for db code, server for api code, etc.
+write unit tests when there are more than 10 possible edge cases and it's inefficient to test manually and faster to test with unit test (dont test UI). very often it's faster to write tests than testing manually
+use debug more when doing unit tests (it's veryyyyy useful, happy to share how)
+we should name things around human senses (e.g. vision, audio, not "frames", my bad starting like this)
+do not use mutex if we can avoid it (ask chatgpt why mutexes are anti pattern)
+avoid nesting if, matches, whatever, it makes thing very complex
+properly handle errors (no .expect, it crashes the program, use match)
+use anyhow for errors and if possible implement custom error when it make sense
+avoid functions with more than 5 args as much as possible, find other solution
+always try to remove code rather than adding
+always try to leave the code better, easier to read for humans, and efficient to execute for computers
+figure out how to use tracing lib from rust well
+use linter and set cursor to lint on cmd + s
+IMPORTANT: keep things simple. if a user want something implement the dumb easy solution first then iterate (DONT OVERENGINEER)
+make integrations easily removable from code
+use "feature" of rust for things, (for integrations for examples) to easily remove things
+api and things exposed to users should be INSANELY great UX, ask chatgpt best practices and 20 suggestions and pick best one
+also we have definitely awful usage of data structures atm (100% my bad), most data structures are not adapted for code that run 24/7 with massive data in/out
+
+
+QUESTIONS:
+
+
+TESTING
+push and see
+cargo bench
+cargo test
+website: check all pages, buttons, links
+clean unused deps
+
+MEDIA
+newsletter: paid feature request, meeting summaries
+post youtube
+post audio is recorded even when muted
+post $7k
+post: VAD, hackathon, more users, technical implimentation
+post about paying users
+post about tech implementations
+post: random though: closed source is a dead end
+Animate how data is added in terminal logs
+how to highlight text on demo: Using Shotcut (Free Video Editor)
+channels:
+r/coolgithubprojects kinda... not great
+r/software not bad
+foss
+langchain
+brilliant reddit
+opensource reddit
+mistral discord
+hackernews
+openai forum
+haggingface
+Rizzotto
+
+TALK TO USERS
+
+
+IMMEDIATE TASKS
+/og auto-posting
+post
+push
+use giga brain https://thegigabrain.com/search/screenpipe
+
+
+# whatsapp feature (issues encountered: highly nested, unintuitive hierarchy, dynamic content, invisible character, text hidden in various attributes, various types of windows/alerts)
+/screenshots of non-visible apps? virtual display, avoid distracting user
+/opencv to recognize icons
+/automate xcode inspector
+export to csv/excel/google sheet?
+screenpipe: print everything from the screen- AXDescription- AXValue
+annotate: name, geoup, last message, reply, start, last, status, urgent, next steps, product, inquiry_type, sentiment, assigned_employee, priority, tags, summary, $_value, orders, notes
+sort important messages
+android
+aggregator
+unstructured message -> crm
+deduplication: posted multiple times over time
+consumer tier pricing
+maintain list of functions ai can use?
+integrate all files tgthr
+did we miss any messages?
+notification from specific people
+draft autoreplies
+summary is repeated twice?
+expose summary prompt
+think new ui
+api key input modal, check config
+prompt input, test different prompts
+updating contacts metadata, birthday
+Following up leads on WhatsApp.
+classify interaction
+summary UI overlay
+identify overlaying windows to avoid processing
+fix unprocessed lines
+stream summaries
+double check that unread messages fully loaded based on the last message visible
+keychain permission is bad UX
+refactor
+loading spinner in the center
+can i keep working? run in the background or on supervised virtual display
+search
+duplicated stats
+bad contact list
+sync button
+new message found
+autosync
+onboarding
+ctrl+C/V doesn't work
+review if we have deduplicated messages
+cron, track new messages without opening
+copy paste button
+system messages
+analyze chats
+create loops
+send messages
+combine functions
+simplify
+properly await exporting to finish?
+return to main page after exporting
+generalize accessibility function with llm to another application
+vision model to create workflow and pass it to accessbility api
+delete old posts
+start with recent chats (export) instad of  hardcoded chat number 4
+scroll and click - export all chats
+
+OTHER:
+one messenger
+free-community news post
+maddie we have two people posting
+openai proxy apikey service for free cloud products
+# website [in a week, check prices urls, fallback urls]
+add os in the free app form
+change os option
+invoice option
+uplaod and test github actions
+send pr, get it free
+feature page form
+get user email when checkout starts
+take advantage of checkout seesions
+
+# meetings-feature:
+repetitive posthog metrics
+santry for error messages
+better wundow box, bigger cross, b&w
+concatenate meetings
+expandable block for transcription and summary
+handle situation when there is no openai key, deepgram key
+ended meetings are 5 min old at least, st notifications once
+duplicated meetings
+copy button everywhere
+ask question about the meeting
+ask question across meetings
+expose prompt, 
+days,
+live transcription
+notification when a new meeting starts, finishes
+recognize speakers, 
+perplexity call to get context about the meeting participants
+bring relevant history context to the live meeting
+delete meeting
+llama
+ocr, 
+by speaker, 
+meeting identification settings
+graph
+identify audio from videos
+# phone/friedn:
+endpoint to call db function to add audio
+ngrok to expose endpoint with a key
+ui settings for what is allowed
+
+explore shortcuts
+stripe coupon in posts
+quick button screenpipe to generate something based on the screen
+keep it working when even closed
+# engineer summary:
+!is the user is interacting with a file, it's better to read it's content directly
+!group, deduplicate, fill in missing data
+!create agents, tools
+Classify type of activity: interaction, browsing, engineering
+-messenger - conversaion/person name - message date and author - contect
+-project - file/terminal/chat- writing, reading, executing - content
+--classify focus area: file/terminal/extensions(chat)
+--diff files
+--terminal commands/logs
+-browser - url, title, content, activity (consuming/creating)
+algorithmic data structuring
+save every raw model response
+deduplicate, try to add, if there is a duplicate try to update/improve, maintain the state, build up memories, metadata, and relations, updater: branch out threads as new context arrives, develop schema, thread array, context, distribute new context, create graph
+for high level items like projects, people identify metadata: like names, places, time, project, goal, resources, topics, actions, risks, status, identifiers, relationships, sentiment, languages, events, privacy level, version, author, last modified, priority level, document type, full current context, add fields to the list are you move forward, entities: people, places, companies, projects, tasks, etc.
+return video with key highlights
+notion page
+
+https://situational-awareness.ai/
+tune any website like you want ai js injection
+postman.com/explore
+raw SQL endpoint
+on/off button
+don't store files option
+m13v email bounced?
+screenpipe live captions
+identify user OS but with optiom to choose a different one
+replit agent
+ask LLM to ask you questions
+transmit sentiment, intonation, body language
+DEBUG: you can't cancel update modal
+automate price increase
+system events
+APP: copy curl request, copy response from search invididual and overall
+Promo code, stripe discount, pay link in post
+DEBUG: test with a sample audio for transcription
+DEBUG: segmentation fault
+rewind experience: record duringg meetings, foresee, recap
+introducing context updater
+google search console
+cloudflareworker for openai
+tauri app recordings
+create servers on the fly
+contextually aaware transcription
+discord messages
+frame integration
+endpoint to upload
+DEBUG - when installing app add to applications
+DEBUG - exit app, stop the backend
+keystroke to llm
+summary overlay notifications
+inline grammar suggestions
+why are there two input audio recording files?
+mic Mac mode: voice isolation by default
+silero VAO: download once, remove dependency on the internet
+silero VAO: if there is an issue, fall back to webrtc
+silero VAO: why do i have 100 chunk still
+silero VAO: lower threshold even more?
+silero VAO: virtual device (blackhole)
+can't we just select all text from all apps instead of capturing screenshots?
+deterministic search parameters, queries
+try Silero instead of whisper?
+test what Louis was asking for
+README windows
+PIPE ollama instructions to be more clear
+PIPE not clear if the pipe is running
+PIPE not clear how to get started with the pipe, how and when to run phi
+PIPE separate pipe store description and pipes
+PIPE it didn't start for me
+DEBUG: memory leak
+EXPLORE: tracing https://github.com/tokio-rs/tracing https://github.com/search?q=repo:huggingface/candle%20span&type=code
+discord bounty channel
+keep gathering frames and keep the ones with the most change
+confidence to db, Other OCR enginers to test confidence
+Mac audio output
+Turn chunking back on
+test tag, demo, phi 3.5
+After testing, re-enable SIP by repeating the process and using csrutil enable
+use linter and set cursor to lint on cmd + s
+DEBUG: [2024-08-22T23:11:08Z DEBUG screenpipe_server::db] Inserting OCR: frame_id 175525, app BetterDummy, window Item-0, focused true, text No 
+[29] ~/Desktop/screenpipe/whatsapp_autoresponder/print_all_attributes.swift • Untracked
+[29] Tab actions
+[29] ~/Desktop/screenpipe/whatsapp_autoresponder/print_all_attributes/src/main.rs • Untracked
+[29] ~/Desktop/screenpipe/whatsapp_autoresponder/README.md
+[29] ~/Desktop/screenpipe/whatsapp_autoresponder/script.swift
+[29] ~/Desktop/screenpipe/whatsapp_autoresponder/Sources/MainLogic/main.swift
+[29] ~/Desktop/screenpipe/whatsapp_autoresponder/Sources/OpenAIClient/openai.swift
+[29] ~/Desktop/screenpipe/whatsapp_autoresponder/Package.swift
+[29] ~/Desktop/screenpipe/whatsapp_autoresponder/wa.swift
+[29] ~/Desktop/screenpipe/whatsapp_autoresponder/.gitignore
+[29] Find / Replace
+[30] ↓M
+[30] Close (⌘W)
+[30] More Actions...
+[30] accessibility_attributes.txt
+[30] Toggle Replace
+[30] 3 of 3
+[30] Previous Match (⇧⏎)
+[30] Next Match (⏎)
+[30] Find in Selection
+[30] Close (Esc)
+[30] Users
+[30] matthewdi
+[30] Documents
+[30] qt_screenpipe.rtf
+[31] print_all_attributes.swift
+[31] main.rs
+[31] script.swift
+[31] main.swift
+[31] openai.swift
+[31] Package.swift
+[31] wa.swift
+[32] Match Case (⌥⌘C)
+[32] Match Whole Word (⌥⌘W)
+[32] Use Regular Expression (⌥⌘R)
+[33] Find
+[33] print
+[33] backgro
