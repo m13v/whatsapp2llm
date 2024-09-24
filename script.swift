@@ -1005,4 +1005,4 @@ clickChatsItem()
 usleep(500_000) // Wait for 500ms after clicking Chats
 clickExportChat()
 usleep(200_000)
-exportChats(startIndex: 16, count: 17)
+exportChats(startIndex: 4, count: 17)
