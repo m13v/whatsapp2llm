@@ -10,3 +10,19 @@
 </div>
 
 ## [say hi on discord, give feedback, share ideas](https://discord.gg/UMG7zbgq9U)
+
+## todo list
+- [x] implement basic message reading
+- [x] integrate with llm for summarization
+- [x] export to google sheets
+- [ ] custom prompts
+- [ ] email with messages you should reply to
+- [ ] annotate: name, geoup, last message, reply, start, last, status, urgent, next steps, product, inquiry_type, sentiment, assigned_employee, priority, tags, summary, $_value, orders, notes
+- [ ] sort important messages
+- [ ] notification from specific people
+- [ ] implement user authentication
+- [ ] android
+- [ ] telegram
+- [ ] text, SMS, imessage
+- [ ] ui stuff
+- [ ] autosync
