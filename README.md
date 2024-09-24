@@ -17,7 +17,8 @@
 - [x] export to google sheets
 - [ ] custom prompts
 - [ ] email with messages you should reply to
-- [ ] annotate: name, geoup, last message, reply, start, last, status, urgent, next steps, product, inquiry_type, sentiment, assigned_employee, priority, tags, summary, $_value, orders, notes
+- [ ] annotate contacts
+- [ ] annotate convos: name, geoup, last message, reply, start, last, status, urgent, next steps, product, inquiry_type, sentiment, assigned_employee, priority, tags, summary, $_value, orders, notes
 - [ ] sort important messages
 - [ ] notification from specific people
 - [ ] implement user authentication
