@@ -1,6 +1,7 @@
 import Cocoa
 import Foundation
 import Security
+import Darwin
 
 // Simple OpenAI API Client
 class OpenAIClient {
@@ -56,6 +57,195 @@ class OpenAIClient {
     }
 }
 
+class SimpleHTTPServer {
+    let port: UInt16
+    var authCode: String?
+    let semaphore: DispatchSemaphore
+
+    init(port: UInt16) {
+        self.port = port
+        self.semaphore = DispatchSemaphore(value: 0)
+    }
+
+    func start() {
+        DispatchQueue.global(qos: .background).async { [self] in
+            autoreleasepool {
+                let socket = socket(AF_INET, SOCK_STREAM, 0)
+                guard socket >= 0 else {
+                    print("Failed to create socket")
+                    return
+                }
+
+                var value: Int32 = 1
+                setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &value, socklen_t(MemoryLayout.size(ofValue: value)))
+
+                var addr = sockaddr_in()
+                addr.sin_family = sa_family_t(AF_INET)
+                addr.sin_port = in_port_t(self.port).bigEndian
+                addr.sin_addr.s_addr = in_addr_t(0)
+                addr.sin_len = UInt8(MemoryLayout.size(ofValue: addr))
+
+                guard bind(socket, self.sockaddr_cast(&addr), socklen_t(MemoryLayout.size(ofValue: addr))) >= 0 else {
+                    print("Failed to bind to port \(self.port)")
+                    return
+                }
+
+                guard listen(socket, 1) >= 0 else {
+                    print("Failed to listen on socket")
+                    return
+                }
+
+                print("Server listening on port \(self.port)")
+
+                let clientSocket = accept(socket, nil, nil)
+                if clientSocket >= 0 {
+                    let buffer = UnsafeMutablePointer<Int8>.allocate(capacity: 1024)
+                    defer { buffer.deallocate() }
+                    let bytesRead = recv(clientSocket, buffer, 1024, 0)
+                    if bytesRead > 0 {
+                        let data = Data(bytes: buffer, count: bytesRead)
+                        if let request = String(data: data, encoding: .utf8) {
+                            if let codeRange = request.range(of: "code=") {
+                                let codeStart = request.index(codeRange.upperBound, offsetBy: 0)
+                                let codeEnd = request.index(codeStart, offsetBy: 73) // Adjust if necessary
+                                self.authCode = String(request[codeStart..<codeEnd])
+                            }
+                        }
+                    }
+
+                    let response = "HTTP/1.1 200 OK\r\nContent-Length: 38\r\n\r\nAuthorization successful. Please close."
+                    _ = response.withCString { send(clientSocket, $0, strlen($0), 0) }
+                    close(clientSocket)
+                }
+
+                close(socket)
+                self.semaphore.signal()
+            }
+        }
+    }
+
+    private func sockaddr_cast(_ ptr: UnsafeMutablePointer<sockaddr_in>) -> UnsafeMutablePointer<sockaddr> {
+        return UnsafeMutableRawPointer(ptr).assumingMemoryBound(to: sockaddr.self)
+    }
+}
+
+class GoogleAuthManager {
+    private let tokenFile = "token.json"
+    private var token: [String: Any]?
+
+    init() {
+        loadTokenFromFile()
+    }
+
+    private func loadTokenFromFile() {
+        let fileManager = FileManager.default
+        let tokenPath = (fileManager.currentDirectoryPath as NSString).appendingPathComponent(tokenFile)
+        
+        guard fileManager.fileExists(atPath: tokenPath),
+              let data = fileManager.contents(atPath: tokenPath),
+              let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+            print("Failed to load token from file")
+            return
+        }
+        
+        self.token = json
+        print("Token loaded successfully from file")
+    }
+
+    func getAccessToken() -> String? {
+        if let token = self.token,
+           let accessToken = token["token"] as? String,
+           !isTokenExpired(token) {
+            print("using existing access token")
+            return accessToken
+        }
+        
+        print("existing token is expired or not available")
+        
+        // If token is expired, try to refresh it
+        if let refreshToken = self.token?["refresh_token"] as? String {
+            print("attempting to refresh token")
+            return refreshAccessToken(refreshToken)
+        }
+        
+        print("no valid token available. please initiate oauth flow.")
+        return nil
+    }
+
+    private func isTokenExpired(_ token: [String: Any]) -> Bool {
+        guard let expiryString = token["expiry"] as? String,
+              let expiry = ISO8601DateFormatter().date(from: expiryString) else {
+            return true
+        }
+        return Date() > expiry
+    }
+
+    private func refreshAccessToken(_ refreshToken: String) -> String? {
+        guard let clientId = self.token?["client_id"] as? String,
+              let clientSecret = self.token?["client_secret"] as? String else {
+            print("missing client credentials")
+            return nil
+        }
+
+        let tokenUrl = "https://oauth2.googleapis.com/token"
+        let parameters = [
+            "client_id": clientId,
+            "client_secret": clientSecret,
+            "refresh_token": refreshToken,
+            "grant_type": "refresh_token"
+        ]
+
+        var request = URLRequest(url: URL(string: tokenUrl)!)
+        request.httpMethod = "POST"
+        request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&").data(using: .utf8)
+
+        let semaphore = DispatchSemaphore(value: 0)
+        var newAccessToken: String?
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let data = data,
+               let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                if let accessToken = json["access_token"] as? String {
+                    newAccessToken = accessToken
+                    self.updateTokenFile(with: json)
+                    print("token refreshed successfully")
+                } else {
+                    print("failed to get access_token from response")
+                    print("response: \(json)")
+                }
+            } else if let error = error {
+                print("error refreshing token: \(error.localizedDescription)")
+            } else if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                print("unexpected response: \(responseString)")
+            }
+            semaphore.signal()
+        }.resume()
+
+        _ = semaphore.wait(timeout: .distantFuture)
+        return newAccessToken
+    }
+
+    private func updateTokenFile(with newToken: [String: Any]) {
+        var updatedToken = self.token ?? [:]
+        for (key, value) in newToken {
+            updatedToken[key] = value
+        }
+        updatedToken["expiry"] = ISO8601DateFormatter().string(from: Date().addingTimeInterval(3600)) // Assume 1 hour validity
+
+        let fileManager = FileManager.default
+        let tokenPath = (fileManager.currentDirectoryPath as NSString).appendingPathComponent(tokenFile)
+        
+        if let data = try? JSONSerialization.data(withJSONObject: updatedToken, options: .prettyPrinted) {
+            try? data.write(to: URL(fileURLWithPath: tokenPath))
+            self.token = updatedToken
+            print("Token file updated successfully")
+        } else {
+            print("Failed to update token file")
+        }
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
     var textView: NSTextView!
@@ -66,11 +256,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var conversationsDropdown: NSPopUpButton!
     var contactsDropdown: NSPopUpButton!
     var addToAIChatButton: NSButton!
+    var exportButton: NSButton!
     var openAI: OpenAIClient?
     var loadingSpinner: NSProgressIndicator!
+    var exitButton: NSButton!
 
     let keychainService = "com.yourcompany.whatsapp-autoresponder"
     let keychainAccount = "OPENAI_API_KEY"
+
+    var googleAuthManager: GoogleAuthManager!
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         let frame = NSRect(x: 100, y: 100, width: 1200, height: 800) // 4 times larger
@@ -168,6 +362,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         addToAIChatButton.layer?.backgroundColor = NSColor.systemGreen.cgColor
         addToAIChatButton.layer?.cornerRadius = 5
 
+        // Export button
+        exportButton = NSButton(frame: NSRect(x: 680, y: window.contentView!.frame.height - 200, width: 180, height: 30))
+        exportButton.title = "export to Google sheets"
+        exportButton.bezelStyle = .rounded
+        exportButton.target = self
+        exportButton.action = #selector(exportToGoogleSheets)
+        exportButton.wantsLayer = true
+        exportButton.layer?.backgroundColor = NSColor.systemBlue.cgColor
+        exportButton.layer?.cornerRadius = 5
+
         // Progress bar (adjusted position)
         progressBar = NSProgressIndicator(frame: NSRect(x: 180, y: window.contentView!.frame.height - 155, width: 400, height: 20))
         progressBar.style = .bar
@@ -196,15 +400,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         loadingSpinner.style = .spinning
         loadingSpinner.isDisplayedWhenStopped = false
 
+        // Create exit button
+        exitButton = NSButton(frame: NSRect(x: window.contentView!.frame.width - 100, y: window.contentView!.frame.height - 40, width: 80, height: 30))
+        exitButton.title = "exit"
+        exitButton.bezelStyle = .rounded
+        exitButton.target = self
+        exitButton.action = #selector(exitApplication)
+        exitButton.wantsLayer = true
+        exitButton.layer?.backgroundColor = NSColor.systemRed.cgColor
+        exitButton.layer?.cornerRadius = 5
+
         contentView.addSubview(statsColumn)
         contentView.addSubview(statusColumn)
         contentView.addSubview(loadButton)
         contentView.addSubview(conversationsDropdown)
         contentView.addSubview(contactsDropdown)
         contentView.addSubview(addToAIChatButton)  // Add the new button
+        contentView.addSubview(exportButton)
         contentView.addSubview(progressBar)
         contentView.addSubview(scrollView)
         contentView.addSubview(loadingSpinner)
+        contentView.addSubview(exitButton)
 
         window.contentView = contentView
 
@@ -215,12 +431,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         conversationsDropdown.autoresizingMask = [.minYMargin] // Stick to left side when resizing
         contactsDropdown.autoresizingMask = [.minYMargin]
         addToAIChatButton.autoresizingMask = [.minYMargin]
+        exportButton.autoresizingMask = [.minYMargin]
         progressBar.autoresizingMask = [.width, .minYMargin]
         scrollView.autoresizingMask = [.width, .height]
         loadingSpinner.autoresizingMask = [.minXMargin, .minYMargin]
+        exitButton.autoresizingMask = [.minXMargin, .minYMargin]
 
         window.setContentSize(NSSize(width: 1200, height: 800)) // 4 times larger
         window.minSize = NSSize(width: 800, height: 600) // Adjusted minimum size
+
+        googleAuthManager = GoogleAuthManager()
 
         checkArchiveFile()
     }
@@ -241,7 +461,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if FileManager.default.fileExists(atPath: archiveFile.path) {
             do {
-                let content = try String(contentsOf: archiveFile)
+                let content = try String(contentsOf: archiveFile, encoding: .utf8)
                 let lines = content.components(separatedBy: .newlines)
                 
                 // Update stats label
@@ -331,7 +551,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if !archiveExists {
                 FileManager.default.createFile(atPath: archiveFile.path, contents: nil, attributes: nil)
             } else {
-                existingContent = try String(contentsOf: archiveFile)
+                existingContent = try String(contentsOf: archiveFile, encoding: .utf8)
                 let lines = existingContent.components(separatedBy: .newlines)
                 if lines.count > 1 && lines[1].starts(with: "conversations:") {
                     let conversationsLine = lines[1].replacingOccurrences(of: "conversations: ", with: "")
@@ -394,7 +614,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let enumerator = FileManager.default.enumerator(at: tempDir, includingPropertiesForKeys: nil)
                 while let fileURL = enumerator?.nextObject() as? URL {
                     if fileURL.pathExtension == "txt" {
-                        let content = try String(contentsOf: fileURL)
+                        let content = try String(contentsOf: fileURL, encoding: .utf8)
                         let messages = content.components(separatedBy: .newlines)
                         for message in messages {
                             if !message.isEmpty {
@@ -443,14 +663,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             
             if !newMessages.isEmpty || processedZipCount > 0 || !archiveExists {
-                var totalMessages = existingMessages.count + newMessages.count
-                var totalConversations = conversations.count
-                var totalContacts = contacts.count
+                let totalMessages = existingMessages.count + newMessages.count
+                let totalConversations = conversations.count
+                let totalContacts = contacts.count
 
-                let statsLog = "stats:\n  total messages: \(totalMessages)\n  total conversations: \(totalConversations)\n  total contacts: \(totalContacts)\n"
-                let statusLog = "status_log:\n  timestamp: \(ISO8601DateFormatter().string(from: Date()))\n  new messages: \(newMessages.count)\n  processed zips: \(processedZipCount)\n  last zip: \(zipFiles.first?.lastPathComponent ?? "N/A")\n"
+                let statsLog = "<<<stats>>>\n  total messages: \(totalMessages)\n  total conversations: \(totalConversations)\n  total contacts: \(totalContacts)\n\n"
+                let statusLog = "<<<status_log>>>\n  timestamp: \(ISO8601DateFormatter().string(from: Date()))\n  new messages: \(newMessages.count)\n  processed zips: \(processedZipCount)\n  last zip: \(zipFiles.first?.lastPathComponent ?? "N/A")\n\n"
                 
-                let conversationsLog = conversations.isEmpty ? "" : "conversations:\n" + conversations.map { "  \($0.key): \($0.value)" }.joined(separator: "\n") + "\n"
+                let conversationsLog = conversations.isEmpty ? "" : "<<<conversations>>>\n" + conversations.map { "  \($0.key): \($0.value)" }.joined(separator: "\n") + "\n\n"
 
                 // Sort contacts
                 let sortedContacts = contacts.sorted { (contact1, contact2) -> Bool in
@@ -468,19 +688,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
 
-                let contactsLog = contacts.isEmpty ? "" : "contacts:\n" + sortedContacts.map { "  \($0.key): \($0.value.lastTimestamp): \($0.value.messageCount)" }.joined(separator: "\n") + "\n"
+                let contactsLog = contacts.isEmpty ? "" : "<<<contacts>>>\n" + sortedContacts.map { "  \($0.key): \($0.value.lastTimestamp): \($0.value.messageCount)" }.joined(separator: "\n") + "\n\n"
+                
+                let messagesLog = newMessages.isEmpty ? "" : "<<<messages>>>\n" + newMessages.joined(separator: "\n") + "\n\n"
                 
                 // Remove old stats, status_log, conversations, and contacts from existing content
                 let contentLines = existingContent.components(separatedBy: .newlines)
                 let updatedExistingContent = contentLines.drop(while: { line in
-                    line.starts(with: "stats:") || 
-                    line.starts(with: "status_log:") || 
-                    line.starts(with: "conversations:") || 
-                    line.starts(with: "contacts:") ||
+                    line.starts(with: "<<<stats>>>") || 
+                    line.starts(with: "<<<status_log>>>") || 
+                    line.starts(with: "<<<conversations>>>") || 
+                    line.starts(with: "<<<contacts>>>") ||
+                    line.starts(with: "<<<messages>>>") ||
                     line.trimmingCharacters(in: .whitespaces).isEmpty
                 }).joined(separator: "\n")
                 
-                let updatedContent = statsLog + statusLog + conversationsLog + contactsLog + newMessages.joined(separator: "\n") + (newMessages.isEmpty ? "" : "\n") + updatedExistingContent
+                let updatedContent = statsLog + statusLog + conversationsLog + contactsLog + messagesLog + updatedExistingContent
                 try updatedContent.write(to: archiveFile, atomically: true, encoding: String.Encoding.utf8)
                 
                 DispatchQueue.main.async {
@@ -518,7 +741,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let archiveFile = downloadsURL.appendingPathComponent("do_not_delete_chat_archive.txt")
         
         do {
-            let content = try String(contentsOf: archiveFile)
+            let content = try String(contentsOf: archiveFile, encoding: .utf8)
             let lines = content.components(separatedBy: .newlines)
             
             let filteredMessages = lines.filter { line in
@@ -550,7 +773,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let archiveFile = downloadsURL.appendingPathComponent("do_not_delete_chat_archive.txt")
         
         do {
-            let content = try String(contentsOf: archiveFile)
+            let content = try String(contentsOf: archiveFile, encoding: .utf8)
             let lines = content.components(separatedBy: .newlines)
             
             print("Total lines in archive: \(lines.count)")
@@ -668,7 +891,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let archiveFile = downloadsURL.appendingPathComponent("do_not_delete_chat_archive.txt")
         
         do {
-            let content = try String(contentsOf: archiveFile)
+            let content = try String(contentsOf: archiveFile, encoding: .utf8)
             let lines = content.components(separatedBy: .newlines)
             
             let filteredMessages = lines.filter { line in
@@ -716,6 +939,240 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         return nil
+    }
+
+    @objc func exportToGoogleSheets() {
+        guard let token = googleAuthManager.getAccessToken() else {
+            DispatchQueue.main.async {
+                self.textView.string = "failed to obtain access token"
+            }
+            return
+        }
+
+        print("obtained access token: \(token)")
+        // Use the token to create a spreadsheet and export data
+        createSpreadsheet(token: token)
+    }
+
+    func createSpreadsheet(token: String) {
+        let createUrl = URL(string: "https://sheets.googleapis.com/v4/spreadsheets")!
+        var request = URLRequest(url: createUrl)
+        request.httpMethod = "POST"
+        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let createBody: [String: Any] = [
+            "properties": [
+                "title": "whatsapp chat export \(ISO8601DateFormatter().string(from: Date()))"
+            ]
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: createBody)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("error creating spreadsheet: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.textView.string = "error creating spreadsheet: \(error.localizedDescription)"
+                }
+                return
+            }
+
+            print("received response from google sheets api")
+            if let httpResponse = response as? HTTPURLResponse {
+                print("google sheets api response status: \(httpResponse.statusCode)")
+                if httpResponse.statusCode != 200 {
+                    if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                        print("error response: \(responseString)")
+                    }
+                    DispatchQueue.main.async {
+                        self.textView.string = "error: google sheets api returned status code \(httpResponse.statusCode)"
+                    }
+                    return
+                }
+            }
+
+            guard let data = data else {
+                print("no data received from google sheets api")
+                DispatchQueue.main.async {
+                    self.textView.string = "no data received from google sheets api"
+                }
+                return
+            }
+
+            print("parsing api response")
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                   let spreadsheetId = json["spreadsheetId"] as? String {
+                    let spreadsheetUrl = "https://docs.google.com/spreadsheets/d/\(spreadsheetId)"
+                    print("created new spreadsheet with id: \(spreadsheetId)")
+                    print("spreadsheet url: \(spreadsheetUrl)")
+                    DispatchQueue.main.async {
+                        self.textView.string = "data exported to new google sheets successfully!\nspreadsheet id: \(spreadsheetId)\nspreadsheet url: \(spreadsheetUrl)"
+                    }
+                    self.addDataToSpreadsheet(spreadsheetId: spreadsheetId, token: token)
+                } else {
+                    print("failed to get spreadsheet id from api response")
+                    DispatchQueue.main.async {
+                        self.textView.string = "failed to get spreadsheet id from api response"
+                    }
+                }
+            } catch {
+                print("error parsing api response: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.textView.string = "error parsing api response: \(error.localizedDescription)"
+                }
+            }
+        }.resume()
+    }
+
+    func addDataToSpreadsheet(spreadsheetId: String, token: String) {
+        let range = "Sheet1!A1"
+        let url = URL(string: "https://sheets.googleapis.com/v4/spreadsheets/\(spreadsheetId)/values/\(range):append?valueInputOption=USER_ENTERED")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let exportData = self.prepareDataForExport()
+        let body: [String: Any] = [
+            "values": exportData
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.textView.string = "error exporting to google sheets: \(error.localizedDescription)"
+                }
+                return
+            }
+
+            if let httpResponse = response as? HTTPURLResponse {
+                print("google sheets api response status: \(httpResponse.statusCode)")
+                if httpResponse.statusCode != 200 {
+                    DispatchQueue.main.async {
+                        self.textView.string = "error: google sheets api returned status code \(httpResponse.statusCode) when adding data"
+                    }
+                    return
+                }
+            }
+
+            if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                print("google sheets api response: \(responseString)")
+            }
+
+            let spreadsheetUrl = "https://docs.google.com/spreadsheets/d/\(spreadsheetId)"
+            DispatchQueue.main.async {
+                let message = "data exported to new google sheets successfully!\nspreadsheet id: \(spreadsheetId)\n"
+                let attributedString = NSMutableAttributedString(string: message)
+                
+                let linkString = "spreadsheet url: \(spreadsheetUrl)"
+                let linkRange = NSRange(location: message.count, length: linkString.count)
+                attributedString.append(NSAttributedString(string: linkString))
+                attributedString.addAttribute(.link, value: spreadsheetUrl, range: linkRange)
+                
+                self.textView.textStorage?.setAttributedString(attributedString)
+                
+                // enable link interaction
+                self.textView.isSelectable = true
+                self.textView.isEditable = false
+            }
+        }.resume()
+    }
+
+    func loadTokenFromJSON() -> String? {
+        let tokenFilePath = "/Users/matthewdi/Desktop/screenpipe/whatsapp_autoresponder/token.json"
+        let tokenFileURL = URL(fileURLWithPath: tokenFilePath)
+        
+        print("looking for token file at: \(tokenFileURL.path)")
+        
+        guard FileManager.default.fileExists(atPath: tokenFileURL.path) else {
+            print("token file not found at \(tokenFileURL.path)")
+            return nil
+        }
+
+        do {
+            let data = try Data(contentsOf: tokenFileURL)
+            if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+               let token = json["token"] as? String {
+                print("token successfully loaded")
+                return token
+            } else {
+                print("failed to parse json or find 'token' key")
+            }
+        } catch {
+            print("error loading token from json: \(error.localizedDescription)")
+        }
+        return nil
+    }
+
+    func prepareDataForExport() -> [[String]] {
+        var data: [[String]] = []
+        data.append(["timestamp", "conversation", "contact", "message"])
+
+        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+        let archiveFile = downloadsURL.appendingPathComponent("do_not_delete_chat_archive.txt")
+
+        do {
+            let content = try String(contentsOf: archiveFile, encoding: .utf8)
+            let lines = content.components(separatedBy: .newlines)
+
+            var foundMessagesSection = false
+            var currentConversation = ""
+            var currentTimestamp = ""
+            var currentContact = ""
+
+            for line in lines {
+                if line.starts(with: "<<<messages>>>") {
+                    foundMessagesSection = true
+                    continue
+                }
+
+                if foundMessagesSection && !line.isEmpty {
+                    if line.starts(with: "[") {
+                        let components = line.components(separatedBy: "] ")
+                        if components.count >= 2 {
+                            currentConversation = components[0].trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+                            
+                            let restOfLine = components.dropFirst().joined(separator: "] ")
+                            
+                            if restOfLine.starts(with: "[") {
+                                // This is a normal message with timestamp
+                                let timestampAndRest = restOfLine.components(separatedBy: "] ")
+                                if timestampAndRest.count >= 2 {
+                                    currentTimestamp = timestampAndRest[0].trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+                                    let messageContent = timestampAndRest[1]
+                                    if let colonIndex = messageContent.firstIndex(of: ":") {
+                                        currentContact = String(messageContent[..<colonIndex]).trimmingCharacters(in: .whitespaces)
+                                        let message = String(messageContent[messageContent.index(after: colonIndex)...]).trimmingCharacters(in: .whitespaces)
+                                        data.append([currentTimestamp, currentConversation, currentContact, message])
+                                    } else {
+                                        // Handle case where there's no message content
+                                        data.append([currentTimestamp, currentConversation, currentContact, ""])
+                                    }
+                                }
+                            } else {
+                                // This is a message without timestamp, like the bullet points
+                                data.append([currentTimestamp, currentConversation, currentContact, restOfLine])
+                            }
+                        }
+                    } else {
+                        // This handles any other type of line that doesn't start with "["
+                        data.append([currentTimestamp, currentConversation, currentContact, line])
+                    }
+                }
+            }
+        } catch {
+            print("error reading archive file: \(error.localizedDescription)")
+        }
+
+        return data
+    }
+
+    @objc func exitApplication() {
+        NSApplication.shared.terminate(self)
     }
 }
 
