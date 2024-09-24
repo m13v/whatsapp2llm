@@ -22,9 +22,9 @@ public class OpenAIClient {
         ]
         
         let body: [String: Any] = [
-            "model": "gpt-4",
+            "model": "gpt-4o",
             "messages": messages,
-            "max_tokens": 1000
+            "max_tokens": 4000
         ]
         
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
