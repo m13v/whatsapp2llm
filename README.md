@@ -15,10 +15,7 @@
 
 ## [say hi on discord, give feedback, share ideas](https://discord.gg/UMG7zbgq9U)
 
-
-## download the app
-
-[Download WhatsApp2LLM](https://screenpi.pe/messenger_agent)
+## [Download WhatsApp2LLM](https://screenpi.pe/messenger_agent)
 
 ## todo list
 - [x] implement basic message reading
