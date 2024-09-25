@@ -9,6 +9,10 @@
   <video src="https://github.com/user-attachments/assets/885c7834-7cd0-48e1-b18e-c8d13953bf53" width="100%" />
 </div>
 
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/85f0c817-5089-477f-b3d4-062d8fbfdabc" width="100%" />
+</div>
+
 ## [say hi on discord, give feedback, share ideas](https://discord.gg/UMG7zbgq9U)
 
 
