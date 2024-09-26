@@ -12,7 +12,7 @@ class QueueElement {
     }
 }
 
-func printAllAttributeValues(_ startElement: AXUIElement, to fileHandle: FileHandle) {
+func printAllAttributeValues(_ startElement: AXUIElement, to fileHandle: FileHandle?) {
     var queue = [QueueElement(startElement, depth: 0)]
     var visitedElements = Set<AXUIElement>()
     var printedValues = Set<String>()
@@ -32,15 +32,18 @@ func printAllAttributeValues(_ startElement: AXUIElement, to fileHandle: FileHan
             var value: AnyObject?
             let valueResult = AXUIElementCopyAttributeValue(current.element, attr as CFString, &value)
             if valueResult == .success {
-                if ["AXDescription", "AXValue"].contains(attr) {
+                // Expand the list of attributes we're interested in
+                if ["AXDescription", "AXValue", "AXLabel", "AXRoleDescription", "AXHelp"].contains(attr) {
                     let valueStr = describeValue(value)
                     if !valueStr.isEmpty && !unwantedValues.contains(valueStr) && valueStr.count > 1 && !printedValues.contains(valueStr) {  // Skip empty, unwanted, single-character, and duplicate values
                         let output = "[\(current.depth)] \(valueStr)\n"
-                        fileHandle.write(output.data(using: .utf8)!)
+                        print(output, terminator: "")
+                        fileHandle?.write(output.data(using: .utf8)!)
                         printedValues.insert(valueStr)
                     }
                 }
                 
+                // Add all child elements to the queue, regardless of attribute name
                 if let elementArray = value as? [AXUIElement] {
                     for childElement in elementArray {
                         queue.append(QueueElement(childElement, depth: current.depth + 1))
@@ -108,7 +111,7 @@ func describeAXValue(_ axValue: AXValue) -> String {
 
 func printAllAttributeValuesForCurrentApp() {
     guard let app = NSWorkspace.shared.frontmostApplication else {
-        print("Couldn't get frontmost application")
+        print("couldn't get frontmost application")
         return
     }
     
@@ -121,24 +124,25 @@ func printAllAttributeValuesForCurrentApp() {
     let outputPath = (currentPath as NSString).appendingPathComponent(fileName)
     
     guard fileManager.createFile(atPath: outputPath, contents: nil, attributes: nil) else {
-        print("Couldn't create file")
+        print("couldn't create file")
         return
     }
     
     guard let fileHandle = FileHandle(forWritingAtPath: outputPath) else {
-        print("Couldn't open file for writing")
+        print("couldn't open file for writing")
         return
     }
     defer {
         fileHandle.closeFile()
     }
     
-    let header = "Attribute values for \(app.localizedName ?? "Unknown App"):\n"
+    let header = "attribute values for \(app.localizedName ?? "unknown app"):\n"
+    print(header, terminator: "")
     fileHandle.write(header.data(using: .utf8)!)
     
     printAllAttributeValues(axApp, to: fileHandle)
     
-    print("Output written to \(outputPath)")
+    print("output written to \(outputPath) and printed to terminal")
 }
 
 // usage
