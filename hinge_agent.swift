@@ -578,7 +578,7 @@ class HingeAgent {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let prompt = """
-        decide whether to like or pass. be sceptical, by default pass, we can only like 10% of profiles overall, so be selective. Provide a brief explanation for your decision.
+        decide whether to like or pass. be skeptical, by default pass, we can only like 10% of profiles overall, so be selective. Provide a brief explanation for your decision.
         Be very concise, funny, sarcastic, like a bro friend giving advice.
         Profile data:
         \(scrollData)
@@ -742,7 +742,7 @@ private func handleDecision(_ response: String) {
                 \(scrollData)
                 -
                 you should sound like a very confident successful middle aged man, and not like a ai bot
-                be the ooposite of needy
+                be the opposite of needy
                 you can use emojiy but only consisting of keyboard characters
                 """
                 self.openAI?.sendCompletion(prompt: commentPrompt, completion: { result in
